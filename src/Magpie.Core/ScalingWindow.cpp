@@ -1888,31 +1888,17 @@ void ScalingWindow::_UpdateFocusState() const noexcept {
 			return;
 		}
 
-		const bool topmost = _CalcTopmostState();
-		if (IsTopmostWindow(Handle()) != topmost) {
-			// 由于同步问题可能需要尝试多次
-			for (int i = 0; i < 10; ++i) {
-				SetWindowPos(Handle(), topmost ? HWND_TOPMOST : HWND_NOTOPMOST,
-					0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER);
-
-				if (IsTopmostWindow(Handle()) == topmost) {
-					break;
-				}
-			}
+		if (bool topmost = _CalcTopmostState(); topmost != IsTopmostWindow(Handle())) {
+			// 切换到其他窗口时不要改变源窗口 Z 顺序，当前台窗口权限更高时需要依赖源窗口位置
+			SetWindowPos(Handle(), topmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
+				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | (_srcTracker.IsFocused() ? 0 : SWP_NOOWNERZORDER));
 		}
 
 		if (_srcTracker.IsFocused()) {
 			if (!_options.IsWindowedMode()) {
 				// 全屏模式缩放时确保缩放窗口在所有置顶窗口之上，这使不支持 MPO 的显卡更容易激
 				// 活 DirectFlip。
-				HDWP hDwp = BeginDeferWindowPos(2);
-				if (hDwp) {
-					hDwp = DeferWindowPos(hDwp, _srcTracker.Handle(), HWND_TOP, 0, 0, 0, 0,
-						SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-					hDwp = DeferWindowPos(hDwp, Handle(), HWND_TOP, 0, 0, 0, 0,
-						SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER);
-					EndDeferWindowPos(hDwp);
-				}
+				SetWindowPos(Handle(), HWND_TOP, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 			}
 		} else {
 			if (const HWND hwndFore = GetForegroundWindow()) {

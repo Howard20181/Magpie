@@ -236,9 +236,8 @@ bool SrcTracker::UpdateState(
 	if (wp.showCmd == SW_SHOWMINIMIZED) {
 		// 窗口最小化有两步：先将窗口状态设为最小化，然后将窗口移出屏幕 (左上角坐标
 		// (-32000,-32000))。如果我们刚好在两步之间停止缩放，第二步将无法执行，这和缩
-		// 放窗口被源窗口所有有关，不确定是否是 OS 的 bug。
-		//
-		// 这个检查确保第二步完成后再停止缩放。
+		// 放窗口被源窗口所有有关，不确定是否是 OS 的 bug。这个检查确保第二步完成后再
+		// 停止缩放。
 		if (wp.rcNormalPosition.left == wp.ptMinPosition.x) {
 			return true;
 		}
