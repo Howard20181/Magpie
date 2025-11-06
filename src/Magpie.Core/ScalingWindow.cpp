@@ -1891,9 +1891,16 @@ void ScalingWindow::_UpdateFocusState() const noexcept {
 		const bool oldTopmost = IsTopmostWindow(Handle());
 		const bool newTopmost = _CalcTopmostState();
 		if (oldTopmost != newTopmost) {
-			// 切换到其他窗口时不要改变源窗口 Z 顺序，当前台窗口权限更高时需要依赖源窗口位置
-			SetWindowPos(Handle(), newTopmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
-				SWP_NO_ACTIVATE_MOVE_SIZE | (_srcTracker.IsFocused() ? 0 : SWP_NOOWNERZORDER));
+			// 由于同步问题可能需要尝试多次
+			for (int i = 0; i < 10; ++i) {
+				// 切换到其他窗口时不要改变源窗口 Z 顺序，当前台窗口权限更高时需要依赖源窗口位置
+				SetWindowPos(Handle(), newTopmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
+					SWP_NO_ACTIVATE_MOVE_SIZE | (_srcTracker.IsFocused() ? 0 : SWP_NOOWNERZORDER));
+
+				if (IsTopmostWindow(Handle()) == newTopmost) {
+					break;
+				}
+			}
 		}
 
 		if (_srcTracker.IsFocused()) {
