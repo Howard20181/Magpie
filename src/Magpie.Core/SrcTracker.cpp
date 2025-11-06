@@ -234,7 +234,13 @@ bool SrcTracker::UpdateState(
 
 	RECT curWindowRect;
 	if (wp.showCmd == SW_SHOWMINIMIZED) {
-		isInvisibleOrMinimized = true;
+		// 窗口最小化有两步：先将窗口状态设为最小化，然后将窗口移出屏幕 (左上角坐标
+		// (-32000,-32000))。如果我们刚好在两步之间停止缩放，第二步将无法执行，这和缩
+		// 放窗口被源窗口所有有关，不确定是否是 OS 的 bug。
+		//
+		// 检查 wp.rcNormalPosition.left != wp.ptMinPosition.x 可以确保第二步完成后
+		// 再停止缩放。
+		isInvisibleOrMinimized = wp.rcNormalPosition.left != wp.ptMinPosition.x;
 
 		// rcNormalPosition 使用工作区坐标，应转换为屏幕坐标
 		HMONITOR hMon = MonitorFromWindow(_hWnd, MONITOR_DEFAULTTOPRIMARY);

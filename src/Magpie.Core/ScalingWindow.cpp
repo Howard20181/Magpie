@@ -2084,7 +2084,7 @@ void ScalingWindow::_UpdateWindowRectFromWindowPos(const WINDOWPOS& windowPos) n
 void ScalingWindow::_DelayedStop(bool onSrcHung, bool onSrcRepositioning) const noexcept {
 	if (!onSrcHung) {
 		const HWND hwndSrc = _srcTracker.Handle();
-		if (!(IsWindow(hwndSrc) && Win32Helper::IsWindowHung(hwndSrc))) {
+		if (IsTopmostWindow(Handle()) && !(IsWindow(hwndSrc) && Win32Helper::IsWindowHung(hwndSrc))) {
 			// 提前取消置顶，这样销毁时出现问题不会影响和桌面环境交互
 			SetWindowPos(Handle(), HWND_NOTOPMOST, 0, 0, 0, 0,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER);
