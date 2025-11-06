@@ -1888,19 +1888,22 @@ void ScalingWindow::_UpdateFocusState() const noexcept {
 			return;
 		}
 
-		if (bool topmost = _CalcTopmostState(); topmost != IsTopmostWindow(Handle())) {
+		const bool oldTopmost = IsTopmostWindow(Handle());
+		const bool newTopmost = _CalcTopmostState();
+		if (oldTopmost != newTopmost) {
 			// 切换到其他窗口时不要改变源窗口 Z 顺序，当前台窗口权限更高时需要依赖源窗口位置
-			SetWindowPos(Handle(), topmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
+			SetWindowPos(Handle(), newTopmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
 				SWP_NO_ACTIVATE_MOVE_SIZE | (_srcTracker.IsFocused() ? 0 : SWP_NOOWNERZORDER));
 		}
 
 		if (_srcTracker.IsFocused()) {
-			if (!_options.IsWindowedMode()) {
-				// 全屏模式缩放时确保缩放窗口在所有置顶窗口之上，这使不支持 MPO 的显卡更容易激
-				// 活 DirectFlip。
+			// 全屏模式缩放时确保缩放窗口在所有置顶窗口之上，这使不支持 MPO 的显卡更容易激
+			// 活 DirectFlip。
+			if (!_options.IsWindowedMode() && newTopmost) {
 				SetWindowPos(Handle(), HWND_TOP, 0, 0, 0, 0, SWP_NO_ACTIVATE_MOVE_SIZE);
 			}
-		} else {
+		} else if (oldTopmost && !newTopmost) {
+			// 如果缩放窗口之前是置顶的，此时会在前台窗口之上，应将前台窗口置于顶部
 			if (const HWND hwndFore = GetForegroundWindow()) {
 				if (!SetWindowPos(hwndFore, HWND_TOP, 0, 0, 0, 0, SWP_NO_ACTIVATE_MOVE_SIZE)) {
 					// 如果前台窗口权限更高，SetWindowPos 会失败。这时用其他方法将缩放窗口放到
